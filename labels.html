@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=utf-8>
+    <style>
+    body { 
+        margin: 0; 
+    }
+    canvas {
+        width: 100%; height: 100% 
+    }
+    </style>
+</head>
+
+<body>
+<div id = "labels"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/85/three.js"></script>
+<script src="https://cdn.rawgit.com/mrdoob/three.js/29822c5e/examples/js/controls/TrackballControls.js"></script>
+<script>
+var l = "-53.28	-8.88	32.36	L Aud	Aud;53.47	-6.49	27.52	R Aud	Aud;1.18	-74.54	10.79	Striate	Striate;-45.8	-64.78	31.84	L DMN	DMN;-0.2	-55.21	29.87	Med DMN	DMN;-0.15	51.42	7.58	Front DMN	DMN;51.66	-59.34	28.88	R DMN	DMN;0.41	-91.05	1.58	Occ post	Occ post;-1.48	-27.93	61.5	Motor	Motor;40.1	20.96	44.72	R DLPFC	R V Att;37.83	55.49	1.22	R Front pol	R V Att;47.53	-52.42	43.06	R Par	R V Att;62.53	-32.99	-9.14	R Post Temp	R V Att;-0.91	-2.75	6.15	Basal	Basal;-41.66	-59.04	44.61	L Par	L V Att;-39.04	19.28	43.27	L DLPFC	L V Att;-40.08	50.65	0.81	L Front pol	L V Att;-29.39	-59.43	44.2	L IPS	D Att;31.6	-58.09	45.69	R IPS	D Att;-30.54	-85.14	9.1	L LOC	Vis Sec;-24.29	-74.28	-11.74	Vis	Vis Sec;33.4	-77.96	4.31	R LOC	Vis Sec;-28.17	46.32	21.56	D ACC	Salience;-0.45	34.06	20.73	V ACC	Salience;28.38	47.72	22.13	R A Ins	Salience;-52.12	-17.92	13.28	L STS	Temporal;52.61	-13.65	12.11	R STS	Temporal;-55.52	-43.77	10.08	L TPJ	Language;-48.66	25.11	5.7	Broca	Language;-3.39	17.19	63.52	 Sup Front S	    Language;54.42	-29.5	-2.72	 R TPJ	          Language;52.38	29.39	2.93	  R Pars Op	      Language;1.05	-58.49	-23.91	Cereb	             Cereb;-1.44	-59.12	55.25	Dors PCC	       Dors PCC;-41.33	13.63	2.7	  L Ins	          Cing-Ins;1.05	9.2	46.43	    Cing	           Cing-Ins;43.01	14.3	2.79	   R Ins	          Cing-Ins;-47.85	-32.07	41.9	L Ant IPS	       Ant IPS;48.36	-29.04	43.13	R Ant IPS	       Ant IPS";
+var l2 = l.split(";");
+var i;
+var l3 = [];
+for( i = 0; i<l2.length; i++ ) { 
+    var r = l2[i].split("	");
+    l3.push( {
+        x:parseFloat(r[0]),
+        y:parseFloat(r[1]),
+        z:parseFloat(r[2]),
+        name:r[3]
+    });
+}
+var o = [0,0,0];
+for( i = 0; i < l3.length; i++ ) {
+    o[0] += l3[i].x;
+    o[1] += l3[i].y;
+    o[2] += l3[i].z;
+}
+o[0]/=39;
+o[1]/=39;
+o[2]/=39;
+for( i = 0; i < l3.length; i++ ) {
+    var x = l3[i].x - o[0];
+    var y = l3[i].y - o[1];
+    var z = l3[i].z - o[2];
+    var n = Math.sqrt( x*x + y*y + z*z );
+    
+    n=30;
+    l3[i].x=x/n;
+    l3[i].y=y/n;
+    l3[i].z=z/n;
+    
+    //document.getElementById("labels").innerHTML += x+' '+y+' '+z+' '+l3[i].name+'<br/>';
+}
+
+// CREATING THE SCENE
+// using PerspectiveCamera: first attribute: field of view; second attribute: aspect ratio. 
+// Third & fourth attributes are the near and far clipping plane (i.e. objects further away from the camera than 
+// the value of far or closer than near won't be rendered)
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+
+// CREATING RENDERER INSTANCE
+var renderer = new THREE.WebGLRenderer();
+// set renderer size
+renderer.setSize( window.innerWidth, window.innerHeight );
+// add renderer element to HTML document, i.e. a <canvas> element the renderer uses to display the scene
+document.body.appendChild( renderer.domElement );
+
+// CREATING THE SPHERE
+var geometry = new THREE.SphereGeometry( 1, 20, 20 );
+var material = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true} );
+// mesh is an object that takes a geometry, and applies a material to it, which can then be inserted to the scene, 
+// and move freely around
+var sphere = new THREE.Mesh( geometry, material );
+scene.add( sphere );
+// by default, scene.add() adds the thing to the coordinates (0,0,0). This would cause both the camera and the sphere 
+// to be inside each other. To avoid this, we simply move the camera out a bit.
+camera.position.z = 5;
+
+var controls = new THREE.TrackballControls( camera );
+
+
+
+// add regions
+var regions=[];
+for(i=0;i<l3.length;i++) {
+    var g = new THREE.SphereGeometry( 0.1, 20, 20 );
+    var m;
+    var x,y,z;
+    
+    if(l3[i].x<=0) {
+        x=255;
+    } else {
+        x=50;
+    }
+    if(l3[i].y<=0) {
+        y=255;
+    } else {
+        y=50;
+    }
+    if(l3[i].z<=0) {
+        z=255;
+    } else {
+        z=50;
+    }
+    m=new THREE.MeshBasicMaterial( {color: (x<<16)+(y<<8)+z} );
+    var reg = new THREE.Mesh( g, m );
+    reg.translateX(l3[i].x);
+    reg.translateY(l3[i].y);
+    reg.translateZ(l3[i].z);
+    
+    /*
+    reg.translateX=l3[i].x;
+    reg.translateY=l3[i].y;
+    reg.translateZ=l3[i].z;
+    */
+    scene.add(reg);
+    regions.push(reg);
+}
+/*
+
+function addConnections( id, position, destinations ) {
+var con = new THREE.Group(); 	// one line from data.json
+con.name = id;
+addSphere( con, 5, 0x00ff00, position );
+destinations.forEach( function(d,i) {
+addSphere( con, 5, 0xff0000, d.position );
+addLine( con, position, d.position, 0x0000ff );
+})
+connections.add( con );
+}
+
+function addConnection( id, pos1, pos2 ) {
+var con = new THREE.Group(); 	// one line from data.json
+con.name = id;
+addSphere( con, 5, 0x00ff00, pos1 );
+addSphere( con, 5, 0xff0000, pos2 );
+addLine( con, pos1, pos2, 0x0000ff );
+connections.add( con );
+}
+
+function removeConnections( id ) {
+var con = connections.getObjectByName( id )
+connections.remove( con );
+}
+
+function addSphere( parent, radius, col, position ) {
+var geometry = new THREE.SphereGeometry( radius, 32, 32 );
+var material = new THREE.MeshBasicMaterial( {color: col} );
+var s = new THREE.Mesh( geometry, material );
+s.translateX( position[0] - brainZero.x );
+s.translateY( position[1] - brainZero.y );
+s.translateZ( position[2] - brainZero.z );
+parent.add( s );
+}
+
+function addLine( parent, pos1, pos2, col ) {
+var material = new THREE.LineBasicMaterial({
+color: col
+});
+
+var geometry = new THREE.Geometry();
+geometry.vertices.push(
+new THREE.Vector3( pos1[0] - brainZero.x, pos1[1] - brainZero.y, pos1[2] - brainZero.z ),
+new THREE.Vector3( pos2[0] - brainZero.x, pos2[1] - brainZero.y, pos2[2] - brainZero.z )
+);
+
+var line = new THREE.Line( geometry, material );
+parent.add( line );
+}
+
+
+*/
+
+
+// CREATE RENDER LOOP TO RENDER THE SCENE
+// loop that causes the renderer to draw the scene 60 times per second
+function render() {
+    var i;
+    requestAnimationFrame( render );
+    
+    /*
+    // to rotate the sphere
+    sphere.rotation.x += 0.01;
+    sphere.rotation.y += 0.01;
+    
+    for(i=0;i<regions.length;i++) {
+        regions[i].rotation.x+=0.01;
+        regions[i].rotation.y+=0.01;
+    }
+    */
+    controls.update();
+    renderer.render( scene, camera );
+}
+render();
+
+
+</script>
+</body>
+</html>
